@@ -13,12 +13,18 @@ const styles = StyleSheet.create({
       button:{
         backgroundColor: colors.black,
         borderRadius: 12,
-        width: 180,
+        width: 300,
         height: 60,
         justifyContent: 'center',
         alignItems: 'center',
       },
-      buttonText:{color: colors.white, fontSize: 16,textAlign:'center',padding:8}
+      buttonText:{color: colors.white, fontSize: 16,textAlign:'center',padding:8},
+      overlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'white',
+        justifyContent: 'center',
+        alignItems: 'center',
+      },
 })
 
 export default styles;

@@ -7,32 +7,21 @@ import {
   StyleSheet,
 } from 'react-native';
 import {WebView} from 'react-native-webview';
-import NativeImapModule from '../../utils/ImapModule/NativeImapModule';
 import {HOME} from '../../constants/screennames';
+import Info from './components/Info';
+import {useDispatch} from 'react-redux';
+import {setLoginState, setPassword, setUserMail} from '../../redux/configSlice';
 
 const Signup = ({navigation}) => {
   const [appPassword, setAppPassword] = useState('');
+  const [userEmail, setUserEmail] = useState(''); // Dynamic state for userEmail
   const [isLoading, setIsLoading] = useState(false);
   const [currentUrl, setCurrentUrl] = useState('https://accounts.google.com/');
   const webviewRef = useRef(null);
   const hasExecuted = useRef(false);
   const passwordRef = useRef('');
-  const getMail = async () => {
-    try {
-      const host = 'imap.gmail.com'; //IMAP host
-      const username = 'yadhuyk007@gmail.com';
-      const oauthToken = passwordRef.current;
-      const emails = await NativeImapModule.getEmails(
-        host,
-        username,
-        oauthToken,
-      );
-      navigation.navigate(HOME);
-      console.log('Emails retrieved:', emails);
-    } catch (error) {
-      console.error('Error fetching emails:', error);
-    }
-  };
+  const [accepted, setAccepted] = useState(false);
+  const dispatch = useDispatch();
 
   const handleMessage = event => {
     const message = event.nativeEvent.data;
@@ -41,18 +30,27 @@ const Signup = ({navigation}) => {
       message &&
       message !== 'Button not found' &&
       message !== 'Input field not found' &&
-      message !== 'Password div not found'
+      message !== 'Password div not found' &&
+      message !== 'Button element not found'
     ) {
-      setAppPassword(message);
-      passwordRef.current = message;
-      setIsLoading(false);
-      getMail();
+      if (!appPassword && !userEmail) {
+        setUserEmail(message); // Set userEmail from WebView
+      } else {
+        setAppPassword(message); // Set app password after extraction
+        passwordRef.current = message;
+        setIsLoading(false);
+        dispatch(setPassword(passwordRef.current));
+        dispatch(setUserMail(userEmail));
+        dispatch(setLoginState(true));
+        navigation.navigate(HOME);
+      }
     } else {
       console.log('Error message:', message);
     }
   };
 
   const onNavigationStateChange = navState => {
+    console.log(navState.url);
     if (
       navState.url.includes('https://myaccount.google.com/') &&
       !hasExecuted.current
@@ -66,6 +64,31 @@ const Signup = ({navigation}) => {
     (function() {
       if (!window.hasRunOnce) {
         window.hasRunOnce = true;
+
+        // Check if the URL includes "https://accounts.google.com/v3/signin"
+        if (window.location.href.includes('https://accounts.google.com/v3/signin')) {
+
+          // Set the mail ID directly to the input field
+          const emailInput = document.querySelector('input[type="email"]');
+          if (emailInput) {
+            emailInput.value = '${userEmail}'; // Use dynamic email from React state
+            emailInput.dispatchEvent(new Event('input', { bubbles: true }));
+          } else {
+            window.ReactNativeWebView.postMessage('Email input field not found');
+          }
+
+          // Simulate the click event on the button with the provided class
+          const buttonElement = document.querySelector('button.VfPpkd-LgbsSe.VfPpkd-LgbsSe-OWXEXe-k8QpJ.VfPpkd-LgbsSe-OWXEXe-dgl2Hf.nCP5yc.AjY5Oe.DuMIQc.LQeN7.BqKGqe.Jskylb.TrZEUc.lw1w4b');
+          if (buttonElement) {
+            setTimeout(function() {
+              buttonElement.click(); // Simulate click on the button element
+            }, 1000); // Delay to ensure email input is filled before click
+          } else {
+            window.ReactNativeWebView.postMessage('Button element not found');
+          }
+        }
+
+        // Continue with the app password flow
         setTimeout(function() {
           if (window.location.href.includes('https://myaccount.google.com/apppasswords')) {
             console.log("App Password page loaded");
@@ -100,14 +123,22 @@ const Signup = ({navigation}) => {
               window.ReactNativeWebView.postMessage('Input field not found');
             }
           }
-        }, 3000);
+        }, 3000); // Wait for the page to load
       }
     })();
   `;
 
   return (
     <SafeAreaView style={{flex: 1}}>
-      {!appPassword && (
+      {!accepted && (
+        <Info
+          onContinuePress={mail => {
+            setUserEmail(mail);
+            setAccepted(true);
+          }}
+        />
+      )}
+      {!appPassword && accepted && (
         <WebView
           ref={webviewRef}
           source={{uri: currentUrl}}
@@ -119,27 +150,20 @@ const Signup = ({navigation}) => {
           style={{flex: 1}}
         />
       )}
-      {isLoading && (
+      {/* {isLoading && (
         <View style={styles.overlay}>
           <ActivityIndicator size="large" color="#0000ff" />
           <Text style={styles.loadingText}>Setting up your account...</Text>
         </View>
-      )}
-      {appPassword && (
-        <View style={styles.passwordContainer}>
-          <Text style={styles.passwordText}>
-            Generated App Password: {appPassword}
-          </Text>
-        </View>
-      )}
+      )} */}
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   overlay: {
-    ...StyleSheet.absoluteFillObject, // Fills the entire screen
-    backgroundColor: 'white', // Semi-transparent background
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'white',
     justifyContent: 'center',
     alignItems: 'center',
   },

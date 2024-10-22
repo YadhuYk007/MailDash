@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   ActivityIndicator,
   StatusBar,
@@ -9,12 +9,19 @@ import {
 import colors from '../../constants/colors';
 import {fetch} from '@react-native-community/netinfo';
 import Toast from 'react-native-toast-message';
-import {SIGNUP} from '../../constants/screennames';
+import {HOME, SIGNUP} from '../../constants/screennames';
 import styles from './styles';
 import strings from '../../constants/strings';
+import {useSelector} from 'react-redux';
 
 const Onboarding = ({navigation}) => {
   const [loading, setLoading] = useState<boolean>(false);
+  const loggedIn = useSelector(state => state.user.loggedIn);
+  useEffect(() => {
+    if (loggedIn) {
+      navigation.navigate(HOME);
+    }
+  }, []);
 
   const checkConnectionAndLogin = () => {
     setLoading(true);
@@ -36,11 +43,11 @@ const Onboarding = ({navigation}) => {
   return (
     <View style={styles.parent}>
       <StatusBar backgroundColor={colors.white} barStyle={'dark-content'} />
-      <View style={{alignItems: 'center'}}>
+      <View style={{alignItems: 'center', flex: 0.9, justifyContent: 'center'}}>
         <Text style={styles.title}>{strings.app_name}</Text>
         <Text style={styles.info}>{strings.app_quote}</Text>
       </View>
-      <View>
+      <View style={{flex: 0.1}}>
         <TouchableOpacity
           style={styles.button}
           activeOpacity={0.8}
