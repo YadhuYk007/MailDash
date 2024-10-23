@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {
   ActivityIndicator,
+  BackHandler,
   StatusBar,
   Text,
   TouchableOpacity,
@@ -13,15 +14,24 @@ import {HOME, SIGNUP} from '../../constants/screennames';
 import styles from './styles';
 import strings from '../../constants/strings';
 import {useSelector} from 'react-redux';
+import {useFocusEffect} from '@react-navigation/native';
 
 const Onboarding = ({navigation}) => {
   const [loading, setLoading] = useState<boolean>(false);
-  const loggedIn = useSelector(state => state.user.loggedIn);
-  useEffect(() => {
-    if (loggedIn) {
-      navigation.navigate(HOME);
-    }
-  }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const onBackPress = () => {
+        BackHandler.exitApp();
+        return true;
+      };
+
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      return () =>
+        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+    }, []),
+  );
 
   const checkConnectionAndLogin = () => {
     setLoading(true);

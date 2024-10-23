@@ -1,4 +1,4 @@
-import React, {useState, useRef} from 'react';
+import React, {useState, useRef, useCallback} from 'react';
 import {
   SafeAreaView,
   Text,
@@ -11,10 +11,13 @@ import {HOME} from '../../constants/screennames';
 import Info from './components/Info';
 import {useDispatch} from 'react-redux';
 import {setLoginState, setPassword, setUserMail} from '../../redux/configSlice';
+import strings from '../../constants/strings';
+import colors from '../../constants/colors';
+import styles from './styles';
 
 const Signup = ({navigation}) => {
   const [appPassword, setAppPassword] = useState('');
-  const [userEmail, setUserEmail] = useState(''); // Dynamic state for userEmail
+  const [userEmail, setUserEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [currentUrl, setCurrentUrl] = useState('https://accounts.google.com/');
   const webviewRef = useRef(null);
@@ -34,9 +37,9 @@ const Signup = ({navigation}) => {
       message !== 'Button element not found'
     ) {
       if (!appPassword && !userEmail) {
-        setUserEmail(message); // Set userEmail from WebView
+        setUserEmail(message);
       } else {
-        setAppPassword(message); // Set app password after extraction
+        setAppPassword(message);
         passwordRef.current = message;
         setIsLoading(false);
         dispatch(setPassword(passwordRef.current));
@@ -50,7 +53,11 @@ const Signup = ({navigation}) => {
   };
 
   const onNavigationStateChange = navState => {
-    console.log(navState.url);
+    if (
+      navState.url.includes('https://myaccount.google.com/signinoptions/twosv')
+    ) {
+      setIsLoading(false);
+    }
     if (
       navState.url.includes('https://myaccount.google.com/') &&
       !hasExecuted.current
@@ -60,6 +67,7 @@ const Signup = ({navigation}) => {
     }
   };
 
+  //Javascript injection for auto enabling 2FA incase its disabled and auto generating App-Passwords
   const injectedJavaScript = `
     (function() {
       if (!window.hasRunOnce) {
@@ -67,24 +75,48 @@ const Signup = ({navigation}) => {
 
         // Check if the URL includes "https://accounts.google.com/v3/signin"
         if (window.location.href.includes('https://accounts.google.com/v3/signin')) {
+          console.log("Sign-in page detected");
 
           // Set the mail ID directly to the input field
           const emailInput = document.querySelector('input[type="email"]');
           if (emailInput) {
             emailInput.value = '${userEmail}'; // Use dynamic email from React state
             emailInput.dispatchEvent(new Event('input', { bubbles: true }));
+            console.log("Email input filled");
+
+            // Simulate the click event on the button with the provided class
+            const buttonElement = document.querySelector('button.VfPpkd-LgbsSe.VfPpkd-LgbsSe-OWXEXe-k8QpJ.VfPpkd-LgbsSe-OWXEXe-dgl2Hf.nCP5yc.AjY5Oe.DuMIQc.LQeN7.BqKGqe.Jskylb.TrZEUc.lw1w4b');
+            if (buttonElement) {
+              setTimeout(function() {
+                buttonElement.click(); // Simulate click on the button element
+                console.log("Next button clicked");
+              }, 1000); // Delay to ensure email input is filled before click
+            } else {
+              window.ReactNativeWebView.postMessage('Button element not found');
+            }
           } else {
             window.ReactNativeWebView.postMessage('Email input field not found');
           }
+        }
 
-          // Simulate the click event on the button with the provided class
-          const buttonElement = document.querySelector('button.VfPpkd-LgbsSe.VfPpkd-LgbsSe-OWXEXe-k8QpJ.VfPpkd-LgbsSe-OWXEXe-dgl2Hf.nCP5yc.AjY5Oe.DuMIQc.LQeN7.BqKGqe.Jskylb.TrZEUc.lw1w4b');
-          if (buttonElement) {
-            setTimeout(function() {
-              buttonElement.click(); // Simulate click on the button element
-            }, 1000); // Delay to ensure email input is filled before click
+        // Handling the 2-Step Verification page
+        if (window.location.href.includes('https://myaccount.google.com/signinoptions/twosv')) {
+          console.log("2FA page detected");
+
+          // Check if button exists
+          const twoStepButton = document.querySelector('button.UywwFc-LgbsSe.UywwFc-LgbsSe-OWXEXe-dgl2Hf.wMI9H');
+          if (twoStepButton) {
+            setTimeout(() => {
+              twoStepButton.click(); // Click the button to enable 2FA
+              console.log("2FA button clicked");
+              
+              // Redirect to App Password page after enabling 2FA
+              setTimeout(() => {
+                window.location.href = 'https://myaccount.google.com/apppasswords';
+              }, 2000);
+            }, 1000);
           } else {
-            window.ReactNativeWebView.postMessage('Button element not found');
+            window.ReactNativeWebView.postMessage('2FA button not found');
           }
         }
 
@@ -121,6 +153,7 @@ const Signup = ({navigation}) => {
               }
             } else {
               window.ReactNativeWebView.postMessage('Input field not found');
+              window.location.href = 'https://myaccount.google.com/signinoptions/twosv'; // Redirect to 2FA if input field not found
             }
           }
         }, 3000); // Wait for the page to load
@@ -148,39 +181,17 @@ const Signup = ({navigation}) => {
           javaScriptEnabled={true}
           domStorageEnabled={true}
           style={{flex: 1}}
+          incognito
         />
       )}
-      {/* {isLoading && (
+      {isLoading && !currentUrl.includes('signinoptions/twosv') && (
         <View style={styles.overlay}>
-          <ActivityIndicator size="large" color="#0000ff" />
-          <Text style={styles.loadingText}>Setting up your account...</Text>
+          <ActivityIndicator size="large" color="black" />
+          <Text style={styles.loadingText}>{strings.please_wait}</Text>
         </View>
-      )} */}
+      )}
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'white',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 18,
-    color: '#000',
-  },
-  passwordContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  passwordText: {
-    fontSize: 20,
-    color: '#000',
-  },
-});
 
 export default Signup;

@@ -13,15 +13,16 @@ import Toast from 'react-native-toast-message';
 
 const Info = ({onContinuePress}) => {
   const [mailID, setMailID] = useState('');
+
   const validateAndContinue = () => {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const valid = regex.test(mailID);
     valid
       ? onContinuePress(mailID)
       : Toast.show({
-          type: 'info',
-          text1: strings.check_internet,
-          position: 'bottom',
+          type: 'error',
+          text1: strings.invalid_mail,
+          position: 'top',
           visibilityTime: 2000,
         });
   };
@@ -44,6 +45,7 @@ const Info = ({onContinuePress}) => {
           placeholder="Enter your email id"
           style={styles.input}
           onChangeText={setMailID}
+          placeholderTextColor={'grey'}
         />
         <TouchableOpacity
           disabled={mailID.length == 0}

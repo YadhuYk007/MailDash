@@ -7,6 +7,7 @@ import java.util.Properties
 import javax.mail.AuthenticationFailedException
 
 class OAuth2Authenticator {
+    //to establish a secure connection using JavaMail API with IMAPS protocol
     fun connectToImap(
         session: Session,
         userEmail: String,

@@ -25,6 +25,13 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
       },
+      loadingText: {
+        marginTop: 10,
+        fontSize: 16,
+        color: colors.black,
+        textAlign: 'center',
+        marginHorizontal: 24,
+      },
 })
 
 export default styles;
