@@ -2,7 +2,7 @@ export default   {
     app_name:'MailDash',
     app_quote:'Mail highlights at your fingertips',
     get_started:'Get Started',
-    check_internet:'Check your internet connection',
+    check_internet:'Not connected to the Internet!',
     two_fa_title:'2-Step Verification (2FA)',
     app_password_title:'App Password',
     info_title:'Google 2 Step verification and App Password Generation',

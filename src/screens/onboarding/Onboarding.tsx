@@ -36,12 +36,14 @@ const Onboarding = ({navigation}) => {
   const checkConnectionAndLogin = () => {
     setLoading(true);
     fetch().then(state => {
-      if (state.isConnected) {
+      console.log(state);
+      if (state.isConnected && state.type != 'vpn') {
         setLoading(false);
         navigation.navigate(SIGNUP);
       } else {
+        setLoading(false);
         Toast.show({
-          type: 'info',
+          type: 'error',
           text1: strings.check_internet,
           position: 'bottom',
           visibilityTime: 2000,

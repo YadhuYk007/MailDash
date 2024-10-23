@@ -17,6 +17,7 @@ import strings from '../../constants/strings';
 import Header from './components/Header';
 import CarouselScroll from './components/Carousel';
 import Card from './components/Card';
+import {useNetInfo} from '@react-native-community/netinfo';
 
 const Home = ({navigation}) => {
   const email = useSelector<any>(state => state.user.mailid);
@@ -24,9 +25,12 @@ const Home = ({navigation}) => {
   const [count, setCount] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const dispatch = useDispatch();
+  const {isConnected, type} = useNetInfo();
 
   useEffect(() => {
-    getMail();
+    console.log(`fetching mails`);
+    setLoading(true);
+    isConnected && getMail();
     const backAction = () => {
       Alert.alert(strings.exit_app, strings.exit_confirm, [
         {
@@ -49,7 +53,7 @@ const Home = ({navigation}) => {
       backAction,
     );
     return () => backHandler.remove();
-  }, []);
+  }, [isConnected]);
 
   const getMail = async () => {
     try {
@@ -66,7 +70,7 @@ const Home = ({navigation}) => {
       setCount(emails);
       setLoading(false);
     } catch (error) {
-      Alert.alert('Error fetching emails:', error);
+      console.log(error?.message);
     }
   };
 
@@ -95,14 +99,22 @@ const Home = ({navigation}) => {
           onLogoutPress();
         }}
       />
-      {loading ? (
-        <View style={styles.overlay}>
-          <ActivityIndicator size="large" color="black" />
-        </View>
+      {isConnected && type != 'vpn' ? (
+        loading ? (
+          <View style={styles.overlay}>
+            <ActivityIndicator size="large" color="black" />
+          </View>
+        ) : (
+          <View style={{flex: 1}}>
+            <CarouselScroll />
+            <Card email={email} count={count} onRefresh={() => getMail()} />
+          </View>
+        )
       ) : (
-        <View style={{flex: 1}}>
-          <CarouselScroll />
-          <Card email={email} count={count} onRefresh={() => getMail()} />
+        <View style={{alignItems: 'center', justifyContent: 'center', flex: 1}}>
+          <Text style={{color: colors.black, fontSize: 16}}>
+            {strings.check_internet}
+          </Text>
         </View>
       )}
     </View>

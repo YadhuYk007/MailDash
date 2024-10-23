@@ -10,6 +10,7 @@ import colors from '../../../constants/colors';
 import strings from '../../../constants/strings';
 import styles from './styles';
 import Toast from 'react-native-toast-message';
+import {fetch} from '@react-native-community/netinfo';
 
 const Info = ({onContinuePress}) => {
   const [mailID, setMailID] = useState('');
@@ -17,14 +18,28 @@ const Info = ({onContinuePress}) => {
   const validateAndContinue = () => {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const valid = regex.test(mailID);
-    valid
-      ? onContinuePress(mailID)
-      : Toast.show({
-          type: 'error',
-          text1: strings.invalid_mail,
-          position: 'top',
-          visibilityTime: 2000,
-        });
+    if (valid) {
+      fetch().then(state => {
+        console.log(state);
+        if (state.isConnected && state.type != 'vpn') {
+          onContinuePress(mailID);
+        } else {
+          Toast.show({
+            type: 'error',
+            text1: strings.check_internet,
+            position: 'top',
+            visibilityTime: 2000,
+          });
+        }
+      });
+    } else {
+      Toast.show({
+        type: 'error',
+        text1: strings.invalid_mail,
+        position: 'top',
+        visibilityTime: 2000,
+      });
+    }
   };
 
   return (
